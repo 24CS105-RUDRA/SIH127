@@ -1,6 +1,7 @@
 import re
 from typing import Optional
 from rapidfuzz import fuzz, process
+from rapidfuzz.distance import Levenshtein
 from app.core.config import settings
 
 
@@ -86,7 +87,7 @@ def fuzzy_match_plate(target: str, candidates: list[str], threshold: int = None)
     matches = []
     for original, normalized in norm_candidates:
         # Levenshtein distance
-        distance = fuzz.distance(norm_target, normalized)
+        distance = Levenshtein.distance(norm_target, normalized)
         if distance <= threshold:
             similarity = 1.0 - (distance / max(len(norm_target), len(normalized)))
             matches.append((original, similarity))

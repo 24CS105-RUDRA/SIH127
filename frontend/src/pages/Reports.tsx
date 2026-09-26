@@ -2,17 +2,17 @@ import { useState } from 'react'
 import { 
   FileText, Download, Calendar, Clock, 
   TrendingUp, AlertTriangle, Shield, MapPin,
-  RefreshCw, ChevronDown
+  RefreshCw, ChevronDown, ArrowRight
 } from 'lucide-react'
 import { reportApi } from '../services/apiService'
 import { format, subDays, startOfDay, endOfDay } from 'date-fns'
 import clsx from 'clsx'
 
 const reportTypes = [
-  { id: 'daily_summary', name: 'Daily Traffic Summary', icon: FileText, description: 'Overall traffic statistics, density, O-D matrix, and congestion for a day' },
-  { id: 'trajectory', name: 'Trajectory Report', icon: MapPin, description: 'Complete trajectory for a specific plate with timestamps and speeds' },
-  { id: 'alert_log', name: 'Alert Log', icon: AlertTriangle, description: 'All alerts with filtering by severity, type, and time range' },
-  { id: 'congestion', name: 'Congestion Analysis', icon: TrendingUp, description: 'Detailed congestion analysis with z-scores and speed data' },
+  { id: 'daily_summary', name: 'Daily Traffic Summary', icon: FileText, description: 'Overall traffic statistics, density, O-D matrix, and congestion for a day', color: 'bg-primary-500' },
+  { id: 'trajectory', name: 'Trajectory Report', icon: MapPin, description: 'Complete trajectory for a specific plate with timestamps and speeds', color: 'bg-success-500' },
+  { id: 'alert_log', name: 'Alert Log', icon: AlertTriangle, description: 'All alerts with filtering by severity, type, and time range', color: 'bg-warning-500' },
+  { id: 'congestion', name: 'Congestion Analysis', icon: TrendingUp, description: 'Detailed congestion analysis with z-scores and speed data', color: 'bg-danger-500' },
 ]
 
 export function Reports() {
@@ -84,155 +84,173 @@ export function Reports() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Reports</h1>
-          <p className="text-gray-500 dark:text-gray-400">Generate and export traffic analytics reports</p>
+          <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">Reports</h1>
+          <p className="text-neutral-500 dark:text-neutral-400">Generate and export traffic analytics reports</p>
         </div>
       </div>
 
       {/* Report Type Selector */}
       <div className="card mb-6">
-        <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Select Report Type</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {reportTypes.map(type => {
-            const Icon = type.icon
-            const isSelected = selectedType === type.id
-            return (
-              <button
-                key={type.id}
-                onClick={() => setSelectedType(type.id)}
-                className={clsx(
-                  'p-4 rounded-xl border-2 transition-all text-left',
-                  isSelected
-                    ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30'
-                    : 'border-gray-200 dark:border-gray-700 hover:border-gray-300 dark:hover:border-gray-600'
-                )}
-              >
-                <div className="flex items-start gap-3">
-                  <div className={clsx(
-                    'p-3 rounded-lg',
-                    isSelected ? 'bg-primary-100 dark:bg-primary-900/50' : 'bg-gray-100 dark:bg-gray-800'
-                  )}>
-                    <Icon className={clsx('w-5 h-5', isSelected ? 'text-primary-600' : 'text-gray-600')} />
+        <div className="card-header">
+          <h3 className="font-semibold text-neutral-900 dark:text-white">Select Report Type</h3>
+        </div>
+        <div className="card-body">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {reportTypes.map(type => {
+              const Icon = type.icon
+              const isSelected = selectedType === type.id
+              return (
+                <button
+                  key={type.id}
+                  onClick={() => setSelectedType(type.id)}
+                  className={clsx(
+                    'p-5 rounded-xl border-2 transition-all h-full',
+                    isSelected
+                      ? 'border-primary-500 bg-primary-50 dark:bg-primary-900/30'
+                      : 'border-neutral-200 dark:border-neutral-700 hover:border-neutral-300 dark:hover:border-neutral-600'
+                  )}
+                >
+                  <div className="flex items-start gap-4">
+                    <div className={clsx(
+                      'p-3 rounded-xl',
+                      isSelected ? 'bg-primary-100 dark:bg-primary-900/50' : `bg-neutral-100 dark:bg-neutral-800 ${type.color.replace('500', '100').replace('bg-', 'bg-')}`
+                    )}>
+                      <Icon className={clsx('w-5 h-5', isSelected ? 'text-primary-600 dark:text-primary-400' : `text-neutral-600 dark:text-neutral-400 ${type.color.replace('500', '600').replace('bg-', 'text-')}`)} />
+                    </div>
+                    <div className="flex-1">
+                      <h4 className={clsx('font-medium', isSelected ? 'text-primary-700 dark:text-primary-300' : 'text-neutral-900 dark:text-white')}>
+                        {type.name}
+                      </h4>
+                      <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-1">{type.description}</p>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <h4 className={clsx('font-medium', isSelected ? 'text-primary-700 dark:text-primary-300' : 'text-gray-900 dark:text-white')}>
-                      {type.name}
-                    </h4>
-                    <p className="text-sm text-gray-500 dark:text-gray-400 mt-1">{type.description}</p>
-                  </div>
-                </div>
-              </button>
-            )
-          })}
+                </button>
+              )
+            })}
+          </div>
         </div>
       </div>
 
       {/* Report Configuration */}
       <div className="card mb-6">
-        <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Configure Report</h3>
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-          {/* Date Range */}
-          <div className="md:col-span-2">
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Date Range</label>
-            <div className="flex items-center gap-4">
-              <div className="flex-1">
-                <label className="block text-xs text-gray-500 mb-1">Start Date</label>
+        <div className="card-header">
+          <h3 className="font-semibold text-neutral-900 dark:text-white">Configure Report</h3>
+        </div>
+        <div className="card-body">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {/* Date Range */}
+            <div className="md:col-span-2">
+              <label className="label">Date Range</label>
+              <div className="flex items-center gap-4">
+                <div className="flex-1">
+                  <label className="text-xs text-neutral-500 mb-1 block">Start Date</label>
+                  <input
+                    type="date"
+                    value={dateRange.start}
+                    onChange={(e) => setDateRange({...dateRange, start: e.target.value})}
+                    className="input"
+                    max={format(new Date(), 'yyyy-MM-dd')}
+                  />
+                </div>
+                <div className="flex-1">
+                  <label className="text-xs text-neutral-500 mb-1 block">End Date</label>
+                  <input
+                    type="date"
+                    value={dateRange.end}
+                    onChange={(e) => setDateRange({...dateRange, end: e.target.value})}
+                    className="input"
+                    max={format(new Date(), 'yyyy-MM-dd')}
+                  />
+                </div>
+              </div>
+            </div>
+
+            {/* Format */}
+            <div>
+              <label className="label">Format</label>
+              <select value={formatType} onChange={(e) => setFormatType(e.target.value as 'csv' | 'json')} className="select">
+                <option value="csv">CSV (Excel compatible)</option>
+                <option value="json">JSON</option>
+              </select>
+            </div>
+
+            {/* Plate input for trajectory */}
+            {selectedType === 'trajectory' && (
+              <div className="md:col-span-2">
+                <label className="label">Plate Number</label>
                 <input
-                  type="date"
-                  value={dateRange.start}
-                  onChange={(e) => setDateRange({...dateRange, start: e.target.value})}
-                  className="input"
-                  max={format(new Date(), 'yyyy-MM-dd')}
+                  type="text"
+                  value={plate}
+                  onChange={(e) => setPlate(e.target.value.toUpperCase())}
+                  placeholder="GJ01AB1234"
+                  className="input text-uppercase"
                 />
               </div>
-              <label className="block text-xs text-gray-500 mb-1">End Date</label>
-              <input
-                type="date"
-                value={dateRange.end}
-                onChange={(e) => setDateRange({...dateRange, end: e.target.value})}
-                className="input"
-                max={format(new Date(), 'yyyy-MM-dd')}
-              />
-            </div>
-          </div>
-
-          {/* Format */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Format</label>
-            <select value={formatType} onChange={(e) => setFormatType(e.target.value as 'csv' | 'json')} className="input">
-              <option value="csv">CSV (Excel compatible)</option>
-              <option value="json">JSON</option>
-            </select>
-          </div>
-
-          {/* Plate input for trajectory */}
-          {selectedType === 'trajectory' && (
-            <div className="md:col-span-2">
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Plate Number</label>
-              <input
-                type="text"
-                value={plate}
-                onChange={(e) => setPlate(e.target.value.toUpperCase())}
-                placeholder="GJ01AB1234"
-                className="input text-uppercase"
-              />
-            </div>
-          )}
-        </div>
-      </div>
-
-      {/* Generate Button */}
-      <div className="card mb-6">
-        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-          <div>
-            <button
-              onClick={handleGenerate}
-              disabled={generating || (selectedType === 'trajectory' && !plate.trim())}
-              className="btn-primary btn-lg"
-            >
-              {generating ? (
-                <span className="flex items-center gap-2">
-                  <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
-                  Generating...
-                </span>
-              ) : (
-                <span className="flex items-center gap-2">
-                  <Download className="w-5 h-5" />
-                  Generate & Download {formatType.toUpperCase()}
-                </span>
-              )}
-            </button>
-            {lastGenerated && (
-              <p className="text-sm text-gray-500 dark:text-gray-400 mt-2">
-                Last generated: {lastGenerated}
-              </p>
             )}
           </div>
         </div>
       </div>
 
+      {/* Generate Button */}
+      <div className="card mb-6">
+        <div className="card-body">
+          <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div>
+              <button
+                onClick={handleGenerate}
+                disabled={generating || (selectedType === 'trajectory' && !plate.trim())}
+                className="btn-primary btn-lg"
+              >
+                {generating ? (
+                  <span className="flex items-center gap-2">
+                    <svg className="animate-spin h-5 w-5" viewBox="0 0 24 24"><circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4" fill="none"/><path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4z"/></svg>
+                    Generating...
+                  </span>
+                ) : (
+                  <span className="flex items-center gap-2">
+                    <Download className="w-5 h-5" />
+                    Generate & Download {formatType.toUpperCase()}
+                  </span>
+                )}
+              </button>
+              {lastGenerated && (
+                <p className="text-sm text-neutral-500 dark:text-neutral-400 mt-2">
+                  Last generated: {lastGenerated}
+                </p>
+              )}
+            </div>
+          </div>
+        </div>
+      </div>
+
       {/* Report Preview / Info */}
-      <div className="card">
-        <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Report Preview</h3>
-        <div className="bg-gray-50 dark:bg-gray-800/50 rounded-lg p-6">
-          <div className="font-mono text-sm text-gray-700 dark:text-gray-300 space-y-1">
-            <div>> Report: {currentType?.name}</div>
-            <div>> Period: {format(new Date(dateRange.start), 'PP')} - {format(new Date(dateRange.end), 'PP')}</div>
-            <div>> Format: {formatType.toUpperCase()}</div>
-            {selectedType === 'trajectory' && plate && <div>> Plate: {plate}</div>}
-            <div className="pt-2 border-t border-gray-200 dark:border-gray-700">
-              <span className="text-green-600 dark:text-green-400">></span> Ready to generate
+      <div className="card mb-6">
+        <div className="card-header">
+          <h3 className="font-semibold text-neutral-900 dark:text-white">Report Preview</h3>
+        </div>
+        <div className="card-body">
+          <div className="bg-neutral-50 dark:bg-neutral-800/50 rounded-lg p-6 font-mono text-sm text-neutral-700 dark:text-neutral-300 space-y-1">
+            <div>{'>'} Report: {currentType?.name}</div>
+            <div>{'>'} Period: {format(new Date(dateRange.start), 'PP')} - {format(new Date(dateRange.end), 'PP')}</div>
+            <div>{'>'} Format: {formatType.toUpperCase()}</div>
+            {selectedType === 'trajectory' && plate && <div>{'>'} Plate: {plate}</div>}
+            <div className="pt-2 border-t border-neutral-200 dark:border-neutral-700">
+              <span className="text-success-600 dark:text-success-400">{'>'}</span> Ready to generate
             </div>
           </div>
         </div>
       </div>
 
       {/* Recent Reports */}
-      <div className="card mt-6">
-        <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Recent Reports</h3>
-        <div className="text-center py-8 text-gray-500 dark:text-gray-400">
-          <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
-          <p>No recent reports. Generate your first report above.</p>
+      <div className="card">
+        <div className="card-header">
+          <h3 className="font-semibold text-neutral-900 dark:text-white">Recent Reports</h3>
+        </div>
+        <div className="card-body">
+          <div className="text-center py-8 text-neutral-500 dark:text-neutral-400">
+            <FileText className="w-12 h-12 mx-auto mb-3 opacity-50" />
+            <p>No recent reports. Generate your first report above.</p>
+          </div>
         </div>
       </div>
     </div>

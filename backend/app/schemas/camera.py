@@ -31,7 +31,8 @@ class CameraUpdate(BaseModel):
 
 
 class CameraResponse(CameraBase):
-    location: dict  # GeoJSON Point
+    lat: float
+    lon: float
     installed_at: datetime
 
     model_config = ConfigDict(from_attributes=True)

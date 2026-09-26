@@ -4,6 +4,7 @@ from typing import List, Optional, Dict
 from datetime import datetime, timedelta
 from collections import defaultdict
 import h3
+import math
 from app.models.sighting import PlateSighting
 from app.models.camera import Camera
 from app.models.analytics import (
@@ -14,6 +15,17 @@ from app.schemas.analytics import (
     CongestionPoint, CongestionResponse, HeatmapCell, HeatmapResponse,
     SpeedSegment, SpeedResponse, KPIResponse, AnalyticsQuery, TimeRange
 )
+
+
+def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
+    """Calculate distance in km between two lat/lon points using haversine formula"""
+    R = 6371  # Earth radius in km
+    lat1, lon1, lat2, lon2 = map(math.radians, [lat1, lon1, lat2, lon2])
+    dlat = lat2 - lat1
+    dlon = lon2 - lon1
+    a = math.sin(dlat/2)**2 + math.cos(lat1) * math.cos(lat2) * math.sin(dlon/2)**2
+    c = 2 * math.asin(math.sqrt(a))
+    return R * c
 
 
 class AnalyticsService:
@@ -77,19 +89,10 @@ class AnalyticsService:
         )
         total_cameras = total_cameras_result.scalar() or 0
         
-        # Active alerts
-        alert_result = await self.db.execute(
-            select(func.count(1)).where(
-                and_(
-                    # Alert model needed
-                    text("1=1")
-                )
-            )
-        )
-        # Simplified - just return 0 for now
+        # Active alerts (simplified)
         active_alerts = 0
         
-        # Average city speed (last hour)
+        # Average city speed (last hour) - from analytics_congestion
         speed_result = await self.db.execute(text("""
             SELECT avg_speed FROM analytics_congestion 
             WHERE bucket_start >= :hour_ago 
@@ -112,15 +115,26 @@ class AnalyticsService:
         # Get sightings grouped by camera and time bucket
         bucket_interval = self._get_bucket_interval(start_time, end_time)
         
-        # Use time_bucket from TimescaleDB
-        interval_str = self._interval_to_pg(bucket_interval)
+        # Use date_trunc for time bucketing (standard PostgreSQL)
+        interval_seconds = int(bucket_interval.total_seconds())
+        if interval_seconds < 60:
+            bucket_sql = "date_trunc('minute', ps.ts)"
+        elif interval_seconds < 3600:
+            minutes = interval_seconds // 60
+            bucket_sql = f"date_trunc('hour', ps.ts) + interval '{minutes} min' * floor(extract(minute from ps.ts) / {minutes})"
+        elif interval_seconds < 86400:
+            hours = interval_seconds // 3600
+            bucket_sql = f"date_trunc('hour', ps.ts) + interval '{hours} hour' * floor(extract(hour from ps.ts) / {hours})"
+        else:
+            bucket_sql = "date_trunc('day', ps.ts)"
         
         sql = f"""
             SELECT 
                 ps.camera_id,
                 c.zone,
-                c.location,
-                time_bucket('{interval_str}', ps.ts) as bucket_start,
+                c.lat,
+                c.lon,
+                {bucket_sql} as bucket_start,
                 COUNT(DISTINCT ps.plate_text) as vehicle_count
             FROM plate_sightings ps
             JOIN cameras c ON ps.camera_id = c.camera_id
@@ -136,27 +150,23 @@ class AnalyticsService:
             sql += " AND ps.camera_id = :camera_id"
             params["camera_id"] = query.camera_id
             
-        sql += """
-            GROUP BY ps.camera_id, c.zone, c.location, time_bucket('{interval_str}', ps.ts)
+        sql += f"""
+            GROUP BY ps.camera_id, c.zone, c.lat, c.lon, {bucket_sql}
             ORDER BY bucket_start DESC
-        """.format(interval_str=interval_str)
+        """
         
         result = await self.db.execute(text(sql), params)
         
         data = []
         total_vehicles = 0
         for row in result:
-            camera_id, zone, location, bucket_start, vehicle_count = row
-            if location:
-                lat, lon = location.y, location.x
-            else:
-                lat, lon = 0.0, 0.0
+            camera_id, zone, lat, lon, bucket_start, vehicle_count = row
             
             data.append(DensityPoint(
                 camera_id=camera_id,
                 zone=zone,
-                lat=lat,
-                lon=lon,
+                lat=lat or 0.0,
+                lon=lon or 0.0,
                 vehicle_count=vehicle_count,
                 bucket_start=bucket_start,
                 bucket_end=bucket_start + bucket_interval
@@ -238,7 +248,8 @@ class AnalyticsService:
             SELECT 
                 ac.camera_id,
                 c.zone,
-                c.location,
+                c.lat,
+                c.lon,
                 ac.density_score,
                 ac.avg_speed,
                 ac.congestion_level,
@@ -263,17 +274,13 @@ class AnalyticsService:
         
         data = []
         for row in result:
-            camera_id, zone, location, density_score, avg_speed, congestion_level, z_score = row
-            if location:
-                lat, lon = location.y, location.x
-            else:
-                lat, lon = 0.0, 0.0
+            camera_id, zone, lat, lon, density_score, avg_speed, congestion_level, z_score = row
             
             data.append(CongestionPoint(
                 camera_id=camera_id,
                 zone=zone,
-                lat=lat,
-                lon=lon,
+                lat=lat or 0.0,
+                lon=lon or 0.0,
                 density_score=density_score,
                 avg_speed=avg_speed,
                 congestion_level=congestion_level,
@@ -291,12 +298,13 @@ class AnalyticsService:
         
         sql = """
             SELECT 
-                c.location,
+                c.lat,
+                c.lon,
                 COUNT(DISTINCT ps.plate_text) as vehicle_count
             FROM plate_sightings ps
             JOIN cameras c ON ps.camera_id = c.camera_id
             WHERE ps.ts >= :start_time AND ps.ts <= :end_time
-            AND c.location IS NOT NULL
+            AND c.lat IS NOT NULL AND c.lon IS NOT NULL
         """
         
         params = {"start_time": start_time, "end_time": end_time}
@@ -305,16 +313,15 @@ class AnalyticsService:
             sql += " AND c.zone = :zone"
             params["zone"] = query.zone
             
-        sql += " GROUP BY c.location"
+        sql += " GROUP BY c.lat, c.lon"
         
         result = await self.db.execute(text(sql), params)
         
         # Aggregate to H3 hexagons
         h3_counts = defaultdict(int)
         for row in result:
-            location, count = row
-            if location:
-                lat, lon = location.y, location.x
+            lat, lon, count = row
+            if lat is not None and lon is not None:
                 h3_index = h3.geo_to_h3(lat, lon, resolution)
                 h3_counts[h3_index] += count
         
@@ -352,16 +359,16 @@ class AnalyticsService:
                 FROM plate_sightings
                 WHERE ts >= :start_time AND ts <= :end_time
             ),
-            segment_speeds AS (
+            segment_data AS (
                 SELECT 
                     vp.prev_camera as origin_camera,
                     vp.camera_id as dest_camera,
-                    c1.location as origin_loc,
-                    c2.location as dest_loc,
+                    c1.lat as origin_lat,
+                    c1.lon as origin_lon,
+                    c2.lat as dest_lat,
+                    c2.lon as dest_lon,
                     vp.prev_ts,
-                    vp.ts,
-                    ST_Distance(c1.location::geography, c2.location::geography) / 1000.0 as distance_km,
-                    EXTRACT(EPOCH FROM (vp.ts - vp.prev_ts)) / 3600.0 as time_hours
+                    vp.ts
                 FROM vehicle_paths vp
                 JOIN cameras c1 ON vp.prev_camera = c1.camera_id
                 JOIN cameras c2 ON vp.camera_id = c2.camera_id
@@ -372,29 +379,51 @@ class AnalyticsService:
             SELECT 
                 origin_camera,
                 dest_camera,
-                AVG(distance_km / NULLIF(time_hours, 0)) as avg_speed_kmph,
-                AVG(distance_km) as avg_distance_km,
-                COUNT(*) as sample_count
-            FROM segment_speeds
+                origin_lat,
+                origin_lon,
+                dest_lat,
+                dest_lon,
+                EXTRACT(EPOCH FROM (ts - prev_ts)) / 3600.0 as time_hours
+            FROM segment_data
             WHERE time_hours > 0 AND time_hours < 2  -- Filter unrealistic times
-            GROUP BY origin_camera, dest_camera
-            HAVING COUNT(*) >= 2
-            ORDER BY avg_speed_kmph
         """
         
         params = {"start_time": start_time, "end_time": end_time}
         result = await self.db.execute(text(sql), params)
         
-        segments = []
+        # Calculate speeds in Python
+        segment_map = {}
         for row in result:
-            origin, dest, avg_speed, avg_dist, count = row
-            segments.append(SpeedSegment(
-                origin_camera=origin,
-                dest_camera=dest,
-                distance_km=avg_dist or 0,
-                avg_speed_kmph=avg_speed or 0,
-                sample_count=count
-            ))
+            origin, dest, o_lat, o_lon, d_lat, d_lon, time_hours = row
+            if None in (o_lat, o_lon, d_lat, d_lon):
+                continue
+            
+            distance_km = haversine_distance(o_lat, o_lon, d_lat, d_lon)
+            if time_hours > 0:
+                speed_kmph = distance_km / time_hours
+                if speed_kmph > 200:  # Filter unrealistic speeds
+                    continue
+                
+                key = (origin, dest)
+                if key not in segment_map:
+                    segment_map[key] = {"speeds": [], "distances": []}
+                segment_map[key]["speeds"].append(speed_kmph)
+                segment_map[key]["distances"].append(distance_km)
+        
+        segments = []
+        for (origin, dest), data in segment_map.items():
+            if len(data["speeds"]) >= 2:
+                avg_speed = sum(data["speeds"]) / len(data["speeds"])
+                avg_dist = sum(data["distances"]) / len(data["distances"])
+                segments.append(SpeedSegment(
+                    origin_camera=origin,
+                    dest_camera=dest,
+                    distance_km=avg_dist,
+                    avg_speed_kmph=avg_speed,
+                    sample_count=len(data["speeds"])
+                ))
+        
+        segments.sort(key=lambda x: x.avg_speed_kmph)
         
         return SpeedResponse(
             segments=segments,

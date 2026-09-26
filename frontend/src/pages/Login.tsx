@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
-import { Lock, User, Mail, Eye, EyeOff, AlertCircle, CheckCircle, LayoutGrid } from 'lucide-react'
+import { Lock, User, Mail, Eye, EyeOff, AlertCircle, CheckCircle, LayoutGrid, ArrowRight, Info } from 'lucide-react'
 import { authApi } from '../services/apiService'
 import { useAuthStore } from '../store/useAuthStore'
 import clsx from 'clsx'
@@ -37,11 +37,7 @@ export function Login() {
 
     setLoading(true)
     try {
-      if (isRegister) {
-        await login(formData.email, formData.password)
-      } else {
-        await login(formData.email, formData.password)
-      }
+      await login(formData.email, formData.password)
       navigate('/', { replace: true })
     } catch (err: any) {
       setError(err.response?.data?.detail || 'Login failed. Please check your credentials.')
@@ -62,30 +58,30 @@ export function Login() {
   ]
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-blue-50 dark:from-gray-900 dark:via-gray-900 dark:to-gray-800 px-4">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-primary-50 via-white to-blue-50 dark:from-neutral-900 dark:via-neutral-950 dark:to-neutral-900 px-4">
       <div className="w-full max-w-md">
         {/* Logo */}
-        <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center w-16 h-16 bg-primary-600 rounded-2xl mb-4">
+        <div className="text-center mb-8 animate-slide-up">
+          <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-primary-600 to-primary-700 rounded-2xl mb-4 shadow-lg shadow-primary-500/25">
             <LayoutGrid className="w-10 h-10 text-white" />
           </div>
-          <h1 className="text-3xl font-bold text-gray-900 dark:text-white">ANPR Traffic Analytics</h1>
-          <p className="text-gray-500 dark:text-gray-400 mt-2">City-Wide Vehicle Tracking Platform</p>
+          <h1 className="text-3xl font-bold text-neutral-900 dark:text-white">ANPR Traffic Analytics</h1>
+          <p className="text-neutral-500 dark:text-neutral-400 mt-2">City-Wide Vehicle Tracking Platform</p>
         </div>
 
         {/* Card */}
-        <div className="bg-white dark:bg-dark-card rounded-2xl shadow-xl border border-gray-200 dark:border-gray-700 p-8">
+        <div className="bg-white/80 dark:bg-neutral-900/80 backdrop-blur-xl rounded-2xl shadow-xl border border-neutral-200 dark:border-neutral-700 p-8 animate-slide-up">
           {/* Tabs */}
-          <div className="flex mb-6 border-b border-gray-200 dark:border-gray-700">
+          <div className="flex mb-6 border-b border-neutral-200 dark:border-neutral-700">
             {['login', 'register'].map(type => (
               <button
                 key={type}
                 onClick={() => { setIsRegister(type === 'register'); setError(''); }}
                 className={clsx(
-                  'flex-1 py-3 px-4 text-sm font-medium transition-colors',
+                  'flex-1 py-3 px-4 text-sm font-medium transition-all duration-200',
                   isRegister === (type === 'register')
                     ? 'text-primary-600 dark:text-primary-400 border-b-2 border-primary-600 -mb-px'
-                    : 'text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
+                    : 'text-neutral-500 dark:text-neutral-400 hover:text-neutral-700 dark:hover:text-neutral-200'
                 )}
               >
                 {type === 'login' ? 'Sign In' : 'Register'}
@@ -95,7 +91,7 @@ export function Login() {
 
           {/* Error */}
           {error && (
-            <div className="mb-4 p-3 bg-red-50 dark:bg-red-900/30 border border-red-200 dark:border-red-800 rounded-lg flex items-center gap-2 text-red-700 dark:text-red-400">
+            <div className="mb-4 p-3 bg-danger-50 dark:bg-danger-900/30 border border-danger-200 dark:border-danger-800 rounded-lg flex items-center gap-2 text-danger-700 dark:text-danger-400 animate-slide-up">
               <AlertCircle className="w-5 h-5 flex-shrink-0" />
               <span className="text-sm">{error}</span>
             </div>
@@ -104,10 +100,10 @@ export function Login() {
           {/* Form */}
           <form onSubmit={handleSubmit} className="space-y-4">
             {isRegister && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Full Name</label>
+              <div className="animate-slide-up">
+                <label className="label">Full Name</label>
                 <div className="relative">
-                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <User className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
                   <input
                     type="text"
                     value={formData.name}
@@ -121,12 +117,12 @@ export function Login() {
             )}
 
             {isRegister && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Role</label>
+              <div className="animate-slide-up">
+                <label className="label">Role</label>
                 <select
                   value={formData.role}
                   onChange={(e) => handleChange('role', e.target.value)}
-                  className="input"
+                  className="select"
                   required
                 >
                   {roles.map(r => <option key={r.value} value={r.value}>{r.label}</option>)}
@@ -134,10 +130,10 @@ export function Login() {
               </div>
             )}
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Email</label>
+            <div className="animate-slide-up">
+              <label className="label">Email</label>
               <div className="relative">
-                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
                 <input
                   type="email"
                   value={formData.email}
@@ -150,10 +146,10 @@ export function Login() {
               </div>
             </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Password</label>
+            <div className="animate-slide-up">
+              <label className="label">Password</label>
               <div className="relative">
-                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   value={formData.password}
@@ -166,7 +162,7 @@ export function Login() {
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600 dark:hover:text-gray-300"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300"
                 >
                   {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
                 </button>
@@ -174,10 +170,10 @@ export function Login() {
             </div>
 
             {isRegister && (
-              <div>
-                <label className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-1">Confirm Password</label>
+              <div className="animate-slide-up">
+                <label className="label">Confirm Password</label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+                  <Lock className="absolute left-3 top-1/2 -translate-y-1/2 w-5 h-5 text-neutral-400" />
                   <input
                     type={showPassword ? 'text' : 'password'}
                     value={formData.confirmPassword}
@@ -194,7 +190,7 @@ export function Login() {
             <button
               type="submit"
               disabled={loading}
-              className="w-full btn-primary btn-lg py-3"
+              className="w-full btn-primary btn-lg py-3 animate-slide-up"
             >
               {loading ? (
                 <span className="flex items-center justify-center gap-2">
@@ -208,9 +204,12 @@ export function Login() {
           </form>
 
           {/* Demo Credentials */}
-          <div className="mt-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-            <p className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">Demo Credentials</p>
-            <div className="text-sm text-gray-600 dark:text-gray-400 space-y-1 font-mono">
+          <div className="mt-6 p-4 bg-neutral-50 dark:bg-neutral-800/50 rounded-lg animate-slide-up">
+            <p className="text-sm font-medium text-neutral-700 dark:text-neutral-300 mb-2 flex items-center gap-2">
+              <Info className="w-4 h-4" />
+              Demo Credentials
+            </p>
+            <div className="text-sm text-neutral-600 dark:text-neutral-400 space-y-1 font-mono">
               <div>Email: <strong>admin@anpr.local</strong></div>
               <div>Password: <strong>admin123</strong></div>
             </div>
@@ -218,7 +217,7 @@ export function Login() {
         </div>
 
         {/* Footer */}
-        <div className="mt-6 text-center text-sm text-gray-500 dark:text-gray-400">
+        <div className="mt-6 text-center text-sm text-neutral-500 dark:text-neutral-400">
           <p>Bharat Electronics Limited (BEL) • Smart Automation</p>
           <p className="mt-1">Problem Statement ID: 26127</p>
         </div>

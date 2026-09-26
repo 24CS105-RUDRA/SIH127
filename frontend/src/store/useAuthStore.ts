@@ -14,10 +14,12 @@ interface AuthState {
   user: User | null
   token: string | null
   isAuthenticated: boolean
+  isHydrated: boolean
   login: (email: string, password: string) => Promise<void>
   register: (name: string, email: string, password: string, role: string) => Promise<void>
   logout: () => void
   setUser: (user: User) => void
+  setHydrated: (hydrated: boolean) => void
 }
 
 export const useAuthStore = create<AuthState>()(
@@ -26,6 +28,7 @@ export const useAuthStore = create<AuthState>()(
       user: null,
       token: null,
       isAuthenticated: false,
+      isHydrated: false,
       
       login: async (email: string, password: string) => {
         const response = await authApi.login(email, password)
@@ -54,6 +57,7 @@ export const useAuthStore = create<AuthState>()(
       },
       
       setUser: (user: User) => set({ user }),
+      setHydrated: (hydrated: boolean) => set({ isHydrated: hydrated }),
     }),
     {
       name: 'anpr-auth',
@@ -61,6 +65,9 @@ export const useAuthStore = create<AuthState>()(
         token: state.token,
         isAuthenticated: state.isAuthenticated,
       }),
+      onRehydrateStorage: () => (state) => {
+        state?.setHydrated(true)
+      },
     }
   )
 )

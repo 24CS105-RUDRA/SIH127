@@ -1,10 +1,11 @@
-import { useEffect, useState } from 'react'
-import { MapContainer, TileLayer, Marker, Popup, CircleMarker, useMapEvents } from 'react-leaflet'
+import { useEffect, useState, useMemo } from 'react'
+import { MapContainer, TileLayer, Marker, CircleMarker, Popup, useMapEvents } from 'react-leaflet'
 import { useQuery } from '@tanstack/react-query'
 import { 
   Truck, Camera, AlertTriangle, Gauge, 
   ChevronDown, Download, RefreshCw, Layers,
-  MapPin, Activity, TrendingUp, TrendingDown
+  MapPin, Activity, TrendingUp, TrendingDown,
+  LayoutGrid
 } from 'lucide-react'
 import { 
   analyticsApi, cameraApi, alertApi 
@@ -16,9 +17,10 @@ import { ODMatrixHeatmap } from '../components/ODMatrixHeatmap'
 import { CongestionTable } from '../components/CongestionTable'
 import { SpeedChart } from '../components/SpeedChart'
 import clsx from 'clsx'
+import 'leaflet/dist/leaflet.css'
 
 // Camera marker component with custom icon
-const CameraMarker = ({ camera, onClick }: { camera: any; onClick: () => void }) => {
+const CameraMarker = ({ camera, onClick, isSelected }: any) => {
   const statusColors = {
     online: '#22c55e',
     offline: '#94a3b8',
@@ -28,10 +30,11 @@ const CameraMarker = ({ camera, onClick }: { camera: any; onClick: () => void })
   return (
     <Marker position={[camera.lat, camera.lon]} onClick={onClick}>
       <div className="flex flex-col items-center">
-        <div 
-          className="w-4 h-4 rounded-full border-2 border-white dark:border-dark-bg shadow-lg"
-          style={{ backgroundColor: statusColors[camera.status as keyof typeof statusColors] }}
-        />
+        <div className={clsx(
+          'w-4 h-4 rounded-full border-2 border-white dark:border-dark-bg shadow-lg transition-all',
+          isSelected && 'scale-125 ring-2 ring-primary-500'
+        )} style={{ backgroundColor: statusColors[camera.status as keyof typeof statusColors] }}>
+        </div>
         <span className="text-xs text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-card px-1.5 py-0.5 rounded shadow">
           {camera.camera_id}
         </span>
@@ -64,14 +67,40 @@ const HeatmapCircles = ({ cells }: { cells: any[] }) => {
   )
 }
 
+// Congestion markers
+const CongestionMarkers = ({ data }: { data: any[] }) => {
+  const colors = {
+    normal: '#22c55e',
+    watch: '#f59e0b',
+    congested: '#ef4444'
+  }
+  
+  return (
+    <>
+      {data.map((item, index) => (
+        <Marker key={index} position={[item.lat, item.lon]}>
+          <div className="flex flex-col items-center">
+            <div className={clsx(
+              'w-6 h-6 rounded-full border-2 border-white shadow-lg animate-pulse flex items-center justify-center'
+            )} style={{ backgroundColor: colors[item.congestion_level as keyof typeof colors] }}>
+              <span className="text-white text-xs font-bold">!</span>
+            </div>
+            <span className="text-xs text-gray-700 dark:text-gray-300 bg-white dark:bg-dark-card px-1.5 py-0.5 rounded shadow whitespace-nowrap">
+              {item.camera_id}
+            </span>
+          </div>
+        </Marker>
+      ))}
+    </>
+  )
+}
+
 // Map component
-const MapView = ({ cameras, heatmapCells, showHeatmap, showCameras, showCongestion, onCameraClick }: any) => {
+const MapView = ({ cameras, heatmapCells, showHeatmap, showCameras, showCongestion, onCameraClick, selectedCamera }: any) => {
   const [map, setMap] = useState<any>(null)
   
   useMapEvents({
-    moveend: () => {
-      // Could trigger bounds-based data fetch
-    }
+    moveend: () => {}
   })
 
   return (
@@ -96,6 +125,7 @@ const MapView = ({ cameras, heatmapCells, showHeatmap, showCameras, showCongesti
           key={camera.camera_id}
           camera={camera}
           onClick={() => onCameraClick(camera)}
+          isSelected={selectedCamera === camera.camera_id}
         />
       ))}
     </MapContainer>
@@ -105,6 +135,7 @@ const MapView = ({ cameras, heatmapCells, showHeatmap, showCameras, showCongesti
 export function Dashboard() {
   const { timeRange, mapLayers, setMapLayer, selectedCamera, setSelectedCamera } = useAppStore()
   const [cameraDetails, setCameraDetails] = useState<any>(null)
+  const [heatmapIntensity, setHeatmapIntensity] = useState(1)
   
   // Fetch data
   const { data: kpis, isLoading: kpisLoading } = useQuery({
@@ -233,6 +264,23 @@ export function Dashboard() {
             
             <div className="flex-1" />
             
+            {/* Heatmap intensity */}
+            {mapLayers.heatmap && (
+              <div className="flex items-center gap-2">
+                <SlidersHorizontal className="w-4 h-4 text-gray-400" />
+                <label className="text-sm text-gray-600 dark:text-gray-400">Intensity:</label>
+                <input
+                  type="range"
+                  min="0.1"
+                  max="3"
+                  step="0.1"
+                  value={heatmapIntensity}
+                  onChange={(e) => setHeatmapIntensity(parseFloat(e.target.value))}
+                  className="w-32 accent-primary-600"
+                />
+              </div>
+            )}
+            
             {/* Time range selector */}
             <div className="relative">
               <select
@@ -268,6 +316,7 @@ export function Dashboard() {
               showCameras={mapLayers.cameras}
               showCongestion={mapLayers.congestion}
               onCameraClick={handleCameraClick}
+              selectedCamera={selectedCamera}
             />
           </div>
         </div>
@@ -306,12 +355,18 @@ export function Dashboard() {
                 </div>
                 <div>
                   <p className="text-gray-500 dark:text-gray-400">Location</p>
-                  <p className="font-medium truncate">{cameraDetails.lat.toFixed(4)}, {cameraDetails.lon.toFixed(4)}</p>
+                  <p className="font-medium truncate max-w-[150px]">{cameraDetails.lat.toFixed(4)}, {cameraDetails.lon.toFixed(4)}</p>
                 </div>
                 <div>
                   <p className="text-gray-500 dark:text-gray-400">Last Ping</p>
                   <p className="font-medium">Just now</p>
                 </div>
+              </div>
+              
+              <div className="pt-3 border-t border-gray-200 dark:border-gray-700">
+                <button className="btn-primary w-full text-sm">
+                  View Camera Trajectory Feed
+                </button>
               </div>
             </div>
           )}
@@ -341,7 +396,7 @@ export function Dashboard() {
             {/* Average Speed by Segment */}
             <div className="card">
               <h3 className="font-semibold text-gray-900 dark:text-white mb-4">Average Speed by Segment</h3>
-              <SpeedChart data={[]} /> {/* Would need speeds API */}
+              <SpeedChart data={[]} />
             </div>
           </div>
         </div>

@@ -1,4 +1,4 @@
-from sqlalchemy import select, func, and_
+from sqlalchemy import select, func, and_, distinct
 from sqlalchemy.ext.asyncio import AsyncSession
 from typing import List, Optional, Dict
 from datetime import datetime, timedelta
@@ -13,13 +13,10 @@ class CameraService:
 
     async def create_camera(self, camera_data: CameraCreate) -> Camera:
         """Create a new camera"""
-        from geoalchemy2 import WKTElement
-        
-        point = WKTElement(f"POINT({camera_data.lon} {camera_data.lat})", srid=4326)
-        
         camera = Camera(
             camera_id=camera_data.camera_id,
-            location=point,
+            lat=camera_data.lat,
+            lon=camera_data.lon,
             zone=camera_data.zone,
             direction=camera_data.direction,
             status=camera_data.status,
@@ -144,15 +141,15 @@ class CameraService:
     async def get_camera_locations(self) -> List[Dict]:
         """Get all camera locations for map"""
         result = await self.db.execute(
-            select(Camera.camera_id, Camera.location, Camera.zone, Camera.status)
+            select(Camera.camera_id, Camera.lat, Camera.lon, Camera.zone, Camera.status)
         )
         locations = []
-        for camera_id, location, zone, status in result:
-            if location:
+        for camera_id, lat, lon, zone, status in result:
+            if lat is not None and lon is not None:
                 locations.append({
                     "camera_id": camera_id,
-                    "lat": location.y,
-                    "lon": location.x,
+                    "lat": lat,
+                    "lon": lon,
                     "zone": zone,
                     "status": status
                 })

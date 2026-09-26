@@ -9,7 +9,7 @@ import httpx
 from faker import Faker
 
 # Add seed to path
-sys.path.append('/app/seed')
+sys.path.append(os.path.join(os.path.dirname(__file__), 'seed'))
 from demo_plates import DEMO_PLATES, CAMERA_LOCATIONS, CAMERA_ZONES
 
 fake = Faker()

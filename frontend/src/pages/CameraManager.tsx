@@ -3,7 +3,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { 
   Camera, Plus, Edit, Trash2, MapPin, Wifi, WifiOff, 
   AlertTriangle, Activity, Search, X, Check, MoreVertical,
-  Settings, Eye
+  Settings, Eye, Trash2 as Trash2Icon
 } from 'lucide-react'
 import { cameraApi } from '../services/apiService'
 import clsx from 'clsx'
@@ -64,8 +64,8 @@ export function CameraManager() {
     setEditingCamera(camera)
     setFormData({
       camera_id: camera.camera_id,
-      lat: camera.location?.coordinates?.[1] || 23.08,
-      lon: camera.location?.coordinates?.[0] || 72.62,
+      lat: camera.lat,
+      lon: camera.lon,
       zone: camera.zone || '',
       direction: camera.direction || '',
       stream_url: camera.stream_url || '',
@@ -95,8 +95,8 @@ export function CameraManager() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Camera Manager</h1>
-          <p className="text-gray-500 dark:text-gray-400">
+          <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">Camera Manager</h1>
+          <p className="text-neutral-500 dark:text-neutral-400">
             {camerasData?.data?.total || 0} cameras • {camerasData?.data?.cameras?.filter((c: any) => c.status === 'online').length || 0} online
           </p>
         </div>
@@ -107,71 +107,73 @@ export function CameraManager() {
 
       {/* Filters */}
       <div className="card mb-4">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="relative flex-1 min-w-[250px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search camera ID..."
-              className="input pl-10"
-            />
+        <div className="p-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="relative flex-1 min-w-[250px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search camera ID..."
+                className="input pl-10"
+              />
+            </div>
+            <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="input w-40">
+              <option value="">All Status</option>
+              <option value="online">Online</option>
+              <option value="offline">Offline</option>
+              <option value="alerting">Alerting</option>
+            </select>
+            <select value={zoneFilter} onChange={(e) => setZoneFilter(e.target.value)} className="input w-40">
+              <option value="">All Zones</option>
+              {zonesData?.data?.map((z: string) => <option key={z} value={z}>{z}</option>)}
+            </select>
           </div>
-          <select value={statusFilter} onChange={(e) => setStatusFilter(e.target.value)} className="input w-40">
-            <option value="">All Status</option>
-            <option value="online">Online</option>
-            <option value="offline">Offline</option>
-            <option value="alerting">Alerting</option>
-          </select>
-          <select value={zoneFilter} onChange={(e) => setZoneFilter(e.target.value)} className="input w-40">
-            <option value="">All Zones</option>
-            {zonesData?.data?.map((z: string) => <option key={z} value={z}>{z}</option>)}
-          </select>
         </div>
       </div>
 
       {/* Table */}
-      <div className="flex-1 overflow-hidden bg-white dark:bg-dark-card rounded-xl border border-gray-200 dark:border-gray-700">
+      <div className="flex-1 card overflow-hidden">
         {filteredCameras.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-96 text-gray-500 dark:text-gray-400">
+          <div className="flex flex-col items-center justify-center h-96 text-neutral-500 dark:text-neutral-400">
             <Camera className="w-16 h-16 mb-4 opacity-50" />
             <h3 className="text-lg font-medium mb-2">No cameras found</h3>
             <p>Add cameras to start monitoring</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-800/50">
+            <table className="table">
+              <thead>
                 <tr>
-                  <th className="p-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Camera ID</th>
-                  <th className="p-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Zone</th>
-                  <th className="p-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Direction</th>
-                  <th className="p-3 text-center text-sm font-medium text-gray-500 dark:text-gray-400">Status</th>
-                  <th className="p-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Location</th>
-                  <th className="p-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Stream</th>
-                  <th className="p-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Accuracy (24h)</th>
-                  <th className="p-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400">Actions</th>
+                  <th className="p-3 text-left text-sm font-medium text-neutral-500 dark:text-neutral-400">Camera ID</th>
+                  <th className="p-3 text-left text-sm font-medium text-neutral-500 dark:text-neutral-400">Zone</th>
+                  <th className="p-3 text-left text-sm font-medium text-neutral-500 dark:text-neutral-400">Direction</th>
+                  <th className="p-3 text-center text-sm font-medium text-neutral-500 dark:text-neutral-400">Status</th>
+                  <th className="p-3 text-left text-sm font-medium text-neutral-500 dark:text-neutral-400">Location</th>
+                  <th className="p-3 text-left text-sm font-medium text-neutral-500 dark:text-neutral-400">Stream</th>
+                  <th className="p-3 text-left text-sm font-medium text-neutral-500 dark:text-neutral-400">Accuracy (24h)</th>
+                  <th className="p-3 text-right text-sm font-medium text-neutral-500 dark:text-neutral-400">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
                 {filteredCameras.map((camera: any) => (
-                  <tr key={camera.camera_id} className="hover:bg-gray-50 dark:hover:bg-gray-800/50">
-                    <td className="p-3 font-mono font-medium text-gray-900 dark:text-white">{camera.camera_id}</td>
+                  <tr key={camera.camera_id} className="hover:bg-neutral-50 dark:hover:bg-neutral-800/50">
+                    <td className="p-3 font-mono font-medium text-neutral-900 dark:text-white">{camera.camera_id}</td>
                     <td className="p-3 text-sm">
                       {camera.zone ? (
-                        <span className="badge badge-blue">{camera.zone}</span>
+                        <span className="badge badge-info">{camera.zone}</span>
                       ) : '—'}
                     </td>
-                    <td className="p-3 text-sm text-gray-600 dark:text-gray-300">{camera.direction || '—'}</td>
+                    <td className="p-3 text-sm text-neutral-600 dark:text-neutral-300">{camera.direction || '—'}</td>
                     <td className="p-3 text-center">
                       <button
                         onClick={() => handleStatusToggle(camera)}
                         className={clsx(
                           'badge px-3 py-1',
-                          camera.status === 'online' && 'badge-green',
-                          camera.status === 'offline' && 'badge-gray',
-                          camera.status === 'alerting' && 'badge-red'
+                          camera.status === 'online' && 'badge-success',
+                          camera.status === 'offline' && 'badge-neutral',
+                          camera.status === 'alerting' && 'badge-danger'
                         )}
                       >
                         <span className="flex items-center gap-1">
@@ -182,17 +184,17 @@ export function CameraManager() {
                         </span>
                       </button>
                     </td>
-                    <td className="p-3 text-sm text-gray-600 dark:text-gray-300 font-mono">
-                      {camera.location?.coordinates ? 
-                        `${camera.location.coordinates[1].toFixed(4)}, ${camera.location.coordinates[0].toFixed(4)}` : '—'}
+                    <td className="p-3 text-sm text-neutral-600 dark:text-neutral-300 font-mono">
+                      {camera.lat && camera.lon ? 
+                        `${camera.lat.toFixed(4)}, ${camera.lon.toFixed(4)}` : '—'}
                     </td>
-                    <td className="p-3 text-sm text-gray-600 dark:text-gray-300 truncate max-w-[200px]">
+                    <td className="p-3 text-sm text-neutral-600 dark:text-neutral-300 truncate max-w-[200px]">
                       {camera.stream_url || 'Simulated'}
                     </td>
                     <td className="p-3 text-sm">
                       {camera.ocr_accuracy_24h !== undefined ? (
                         <div className="flex items-center gap-2">
-                          <div className="w-24 h-2 bg-gray-200 dark:bg-gray-700 rounded-full overflow-hidden">
+                          <div className="w-24 h-2 bg-neutral-200 dark:bg-neutral-700 rounded-full overflow-hidden">
                             <div 
                               className="h-full bg-primary-600 rounded-full transition-all"
                               style={{ width: `${Math.min(100, camera.ocr_accuracy_24h * 100)}%` }}
@@ -204,14 +206,14 @@ export function CameraManager() {
                     </td>
                     <td className="p-3 text-right">
                       <div className="flex items-center justify-end gap-1">
-                        <button onClick={() => handleEdit(camera)} className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded" title="Edit">
+                        <button onClick={() => handleEdit(camera)} className="p-2 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded" title="Edit">
                           <Edit className="w-4 h-4" />
                         </button>
                         <button className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded" title="View Accuracy">
                           <Activity className="w-4 h-4" />
                         </button>
-                        <button onClick={() => { if (confirm('Delete this camera?')) deleteMutation.mutate(camera.camera_id) }} className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded" title="Delete">
-                          <Trash2 className="w-4 h-4" />
+                        <button onClick={() => { if (confirm('Delete this camera?')) deleteMutation.mutate(camera.camera_id) }} className="p-2 text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-900/30 rounded" title="Delete">
+                          <Trash2Icon className="w-4 h-4" />
                         </button>
                       </div>
                     </td>
@@ -225,17 +227,19 @@ export function CameraManager() {
 
       {/* Add/Edit Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => { setShowAddModal(false); setEditingCamera(null); }}>
-          <div className="bg-white dark:bg-dark-card rounded-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => { setShowAddModal(false); setEditingCamera(null); }}>
+          <div className="bg-white dark:bg-neutral-900 rounded-xl max-w-md w-full mx-4 max-h-[90vh] overflow-y-auto animate-scale-in" onClick={e => e.stopPropagation()}>
             <form onSubmit={handleSubmit}>
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                <h3 className="font-semibold">{editingCamera ? 'Edit Camera' : 'Add Camera'}</h3>
-                <button type="button" onClick={() => { setShowAddModal(false); setEditingCamera(null); }} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"><X className="w-5 h-5" /></button>
+              <div className="card-header flex items-center justify-between">
+                <h3 className="font-semibold text-neutral-900 dark:text-white">{editingCamera ? 'Edit Camera' : 'Add Camera'}</h3>
+                <button type="button" onClick={() => { setShowAddModal(false); setEditingCamera(null); }} className="p-1 rounded-lg text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <div className="p-4 space-y-4">
+              <div className="card-body space-y-4">
                 {!editingCamera && (
                   <div>
-                    <label className="block text-sm font-medium mb-1">Camera ID *</label>
+                    <label className="label">Camera ID *</label>
                     <input
                       type="text"
                       value={formData.camera_id}
@@ -248,7 +252,7 @@ export function CameraManager() {
                 )}
                 <div className="grid grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-sm font-medium mb-1">Latitude *</label>
+                    <label className="label">Latitude *</label>
                     <input
                       type="number"
                       step="0.000001"
@@ -259,7 +263,7 @@ export function CameraManager() {
                     />
                   </div>
                   <div>
-                    <label className="block text-sm font-medium mb-1">Longitude *</label>
+                    <label className="label">Longitude *</label>
                     <input
                       type="number"
                       step="0.000001"
@@ -271,15 +275,15 @@ export function CameraManager() {
                   </div>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Zone</label>
-                  <select value={formData.zone} onChange={(e) => setFormData({...formData, zone: e.target.value})} className="input">
+                  <label className="label">Zone</label>
+                  <select value={formData.zone} onChange={(e) => setFormData({...formData, zone: e.target.value})} className="select">
                     <option value="">Select zone</option>
                     {zonesData?.data?.map((z: string) => <option key={z} value={z}>{z}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Direction</label>
-                  <select value={formData.direction} onChange={(e) => setFormData({...formData, direction: e.target.value})} className="input">
+                  <label className="label">Direction</label>
+                  <select value={formData.direction} onChange={(e) => setFormData({...formData, direction: e.target.value})} className="select">
                     <option value="">Select direction</option>
                     <option value="Northbound">Northbound</option>
                     <option value="Southbound">Southbound</option>
@@ -288,7 +292,7 @@ export function CameraManager() {
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Stream URL (optional)</label>
+                  <label className="label">Stream URL (optional)</label>
                   <input
                     type="text"
                     value={formData.stream_url}
@@ -298,7 +302,7 @@ export function CameraManager() {
                   />
                 </div>
               </div>
-              <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
+              <div className="card-footer">
                 <button type="button" onClick={() => { setShowAddModal(false); setEditingCamera(null); }} className="btn-secondary">Cancel</button>
                 <button type="submit" disabled={createMutation.isPending || updateMutation.isPending} className="btn-primary">
                   {(createMutation.isPending || updateMutation.isPending) ? 'Saving...' : (editingCamera ? 'Update' : 'Add Camera')}

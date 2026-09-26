@@ -2,8 +2,9 @@ import { useState, useEffect } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { 
   Bell, Check, X, AlertTriangle, Shield, Eye, 
-  MoreVertical, Filter, ChevronDown, ChevronUp,
-  BellOff, Send, Flag, Info, AlertCircle
+  MoreHorizontal, Filter, ChevronDown, ChevronUp,
+  BellOff, Send, Flag, Info, AlertCircle, CheckCircle,
+  Trash2, Edit
 } from 'lucide-react'
 import { alertApi, trajectoryApi } from '../services/apiService'
 import { formatDistanceToNow, format } from 'date-fns'
@@ -11,22 +12,22 @@ import clsx from 'clsx'
 import { useNavigate } from 'react-router-dom'
 
 const severityStyles = {
-  low: 'badge-gray',
-  medium: 'badge-yellow',
-  high: 'badge-red',
-  critical: 'badge-red',
+  low: 'badge-neutral',
+  medium: 'badge-warning',
+  high: 'badge-danger',
+  critical: 'badge-danger',
 }
 
 const statusStyles = {
-  new: 'badge-red',
-  acknowledged: 'badge-yellow',
-  resolved: 'badge-green',
+  new: 'badge-danger',
+  acknowledged: 'badge-warning',
+  resolved: 'badge-success',
 }
 
 const typeIcons = {
-  blacklist_hit: <Shield className="w-4 h-4 text-red-500" />,
-  anomaly: <AlertTriangle className="w-4 h-4 text-yellow-500" />,
-  system: <Info className="w-4 h-4 text-blue-500" />,
+  blacklist_hit: <Shield className="w-4 h-4 text-danger-500" />,
+  anomaly: <AlertTriangle className="w-4 h-4 text-warning-500" />,
+  system: <Info className="w-4 h-4 text-primary-500" />,
 }
 
 const typeLabels = {
@@ -124,8 +125,8 @@ export function AlertsCenter() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Alerts Center</h1>
-          <p className="text-gray-500 dark:text-gray-400">
+          <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">Alerts Center</h1>
+          <p className="text-neutral-500 dark:text-neutral-400">
             {alertsData?.data?.total || 0} total alerts • {alerts.filter(a => a.status === 'new').length} unread
           </p>
         </div>
@@ -133,7 +134,7 @@ export function AlertsCenter() {
         <div className="flex items-center gap-2">
           <button
             onClick={() => setShowFilters(!showFilters)}
-            className={clsx('btn-secondary', showFilters && 'bg-primary-100 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300')}
+            className={clsx('btn-secondary', showFilters && 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300')}
           >
             <Filter className="w-4 h-4 mr-2" /> Filters
           </button>
@@ -144,113 +145,117 @@ export function AlertsCenter() {
       </div>
 
       {/* Tabs */}
-      <div className="flex gap-2 mb-4 border-b border-gray-200 dark:border-gray-700">
-        {tabs.map(tab => (
-          <button
-            key={tab.id}
-            onClick={() => setActiveTab(tab.id as any)}
-            className={clsx(
-              'px-4 py-2 text-sm font-medium border-b-2 -mb-px transition-colors',
-              activeTab === tab.id
-                ? 'border-primary-600 text-primary-600 dark:text-primary-400'
-                : 'border-transparent text-gray-500 dark:text-gray-400 hover:text-gray-700 dark:hover:text-gray-200'
-            )}
-          >
-            <span className="flex items-center gap-2">
-              {tab.icon}
-              {tab.label}
-              {tab.count !== undefined && (
-                <span className="badge badge-red">{tab.count}</span>
-              )}
-            </span>
-          </button>
-        ))}
+      <div className="card mb-4">
+        <div className="p-4">
+          <div className="flex gap-1 overflow-x-auto">
+            {tabs.map(tab => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id as any)}
+                className={clsx(
+                  'flex items-center gap-2 px-4 py-2 text-sm font-medium rounded-lg whitespace-nowrap transition-all duration-200',
+                  activeTab === tab.id
+                    ? 'bg-primary-50 dark:bg-primary-900/30 text-primary-700 dark:text-primary-300'
+                    : 'text-neutral-600 dark:text-neutral-400 hover:bg-neutral-100 dark:hover:bg-neutral-800'
+                )}
+              >
+                {tab.icon}
+                {tab.label}
+                {tab.count !== undefined && (
+                  <span className="badge badge-danger">{tab.count}</span>
+                )}
+              </button>
+            ))}
+          </div>
+        </div>
       </div>
 
       {/* Filters */}
       {showFilters && (
-        <div className="card mb-4 p-4">
-          <div className="flex flex-wrap gap-4">
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-600 dark:text-gray-400">Status:</label>
-              <select
-                value={filters.status}
-                onChange={(e) => setFilters({...filters, status: e.target.value})}
-                className="input w-40"
+        <div className="card mb-4">
+          <div className="p-4">
+            <div className="flex flex-wrap gap-4">
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-neutral-600 dark:text-neutral-400">Status:</label>
+                <select
+                  value={filters.status}
+                  onChange={(e) => setFilters({...filters, status: e.target.value})}
+                  className="input w-40"
+                >
+                  <option value="">All</option>
+                  <option value="new">New</option>
+                  <option value="acknowledged">Acknowledged</option>
+                  <option value="resolved">Resolved</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-neutral-600 dark:text-neutral-400">Severity:</label>
+                <select
+                  value={filters.severity}
+                  onChange={(e) => setFilters({...filters, severity: e.target.value})}
+                  className="input w-40"
+                >
+                  <option value="">All</option>
+                  <option value="critical">Critical</option>
+                  <option value="high">High</option>
+                  <option value="medium">Medium</option>
+                  <option value="low">Low</option>
+                </select>
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-neutral-600 dark:text-neutral-400">Plate:</label>
+                <input
+                  type="text"
+                  value={filters.plateText}
+                  onChange={(e) => setFilters({...filters, plateText: e.target.value})}
+                  placeholder="GJ01AB1234"
+                  className="input w-48"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-neutral-600 dark:text-neutral-400">Camera:</label>
+                <input
+                  type="text"
+                  value={filters.cameraId}
+                  onChange={(e) => setFilters({...filters, cameraId: e.target.value})}
+                  placeholder="CAM001"
+                  className="input w-40"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-neutral-600 dark:text-neutral-400">From:</label>
+                <input
+                  type="datetime-local"
+                  value={filters.startTime}
+                  onChange={(e) => setFilters({...filters, startTime: e.target.value})}
+                  className="input w-48"
+                />
+              </div>
+              <div className="flex items-center gap-2">
+                <label className="text-sm text-neutral-600 dark:text-neutral-400">To:</label>
+                <input
+                  type="datetime-local"
+                  value={filters.endTime}
+                  onChange={(e) => setFilters({...filters, endTime: e.target.value})}
+                  className="input w-48"
+                />
+              </div>
+              <button
+                onClick={() => setFilters({ status: '', severity: '', plateText: '', cameraId: '', startTime: '', endTime: '' })}
+                className="btn-secondary text-sm"
               >
-                <option value="">All</option>
-                <option value="new">New</option>
-                <option value="acknowledged">Acknowledged</option>
-                <option value="resolved">Resolved</option>
-              </select>
+                Clear Filters
+              </button>
             </div>
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-600 dark:text-gray-400">Severity:</label>
-              <select
-                value={filters.severity}
-                onChange={(e) => setFilters({...filters, severity: e.target.value})}
-                className="input w-40"
-              >
-                <option value="">All</option>
-                <option value="critical">Critical</option>
-                <option value="high">High</option>
-                <option value="medium">Medium</option>
-                <option value="low">Low</option>
-              </select>
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-600 dark:text-gray-400">Plate:</label>
-              <input
-                type="text"
-                value={filters.plateText}
-                onChange={(e) => setFilters({...filters, plateText: e.target.value})}
-                placeholder="GJ01AB1234"
-                className="input w-48"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-600 dark:text-gray-400">Camera:</label>
-              <input
-                type="text"
-                value={filters.cameraId}
-                onChange={(e) => setFilters({...filters, cameraId: e.target.value})}
-                placeholder="CAM001"
-                className="input w-40"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-600 dark:text-gray-400">From:</label>
-              <input
-                type="datetime-local"
-                value={filters.startTime}
-                onChange={(e) => setFilters({...filters, startTime: e.target.value})}
-                className="input w-48"
-              />
-            </div>
-            <div className="flex items-center gap-2">
-              <label className="text-sm text-gray-600 dark:text-gray-400">To:</label>
-              <input
-                type="datetime-local"
-                value={filters.endTime}
-                onChange={(e) => setFilters({...filters, endTime: e.target.value})}
-                className="input w-48"
-              />
-            </div>
-            <button
-              onClick={() => setFilters({ status: '', severity: '', plateText: '', cameraId: '', startTime: '', endTime: '' })}
-              className="btn-secondary text-sm"
-            >
-              Clear Filters
-            </button>
           </div>
         </div>
       )}
 
       {/* Bulk Actions */}
       {selectedAlerts.length > 0 && (
-        <div className="bg-blue-50 dark:bg-blue-900/30 border border-blue-200 dark:border-blue-800 rounded-xl p-4 mb-4">
+        <div className="bg-primary-50 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-800 rounded-xl p-4 mb-4 animate-slide-up">
           <div className="flex items-center justify-between">
-            <span className="text-blue-800 dark:text-blue-200 font-medium">
+            <span className="text-primary-800 dark:text-primary-200 font-medium">
               {selectedAlerts.length} alert(s) selected
             </span>
             <div className="flex items-center gap-2">
@@ -269,7 +274,7 @@ export function AlertsCenter() {
               </button>
               <button
                 onClick={() => setSelectedAlerts([])}
-                className="btn-ghost btn-sm text-gray-500"
+                className="btn-ghost btn-sm text-neutral-500"
               >
                 Clear Selection
               </button>
@@ -279,42 +284,42 @@ export function AlertsCenter() {
       )}
 
       {/* Alerts Table */}
-      <div className="flex-1 overflow-hidden bg-white dark:bg-dark-card rounded-xl border border-gray-200 dark:border-gray-700">
+      <div className="flex-1 card overflow-hidden">
         {alerts.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-96 text-gray-500 dark:text-gray-400">
+          <div className="flex flex-col items-center justify-center h-96 text-neutral-500 dark:text-neutral-400">
             <Bell className="w-16 h-16 mb-4 opacity-50" />
             <h3 className="text-lg font-medium mb-2">No alerts found</h3>
             <p>Try adjusting your filters or time range</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-800/50">
+            <table className="table">
+              <thead>
                 <tr>
                   <th className="p-3 w-12">
                     <input
                       type="checkbox"
                       checked={selectedAlerts.length === alerts.length && alerts.length > 0}
                       onChange={handleSelectAll}
-                      className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                      className="w-4 h-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
                     />
                   </th>
-                  <th className="p-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Time</th>
-                  <th className="p-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Plate</th>
-                  <th className="p-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Camera</th>
-                  <th className="p-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Type</th>
-                  <th className="p-3 text-center text-sm font-medium text-gray-500 dark:text-gray-400">Severity</th>
-                  <th className="p-3 text-center text-sm font-medium text-gray-500 dark:text-gray-400">Status</th>
-                  <th className="p-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400">Actions</th>
+                  <th className="p-3 text-left text-sm font-medium text-neutral-500 dark:text-neutral-400">Time</th>
+                  <th className="p-3 text-left text-sm font-medium text-neutral-500 dark:text-neutral-400">Plate</th>
+                  <th className="p-3 text-left text-sm font-medium text-neutral-500 dark:text-neutral-400">Camera</th>
+                  <th className="p-3 text-left text-sm font-medium text-neutral-500 dark:text-neutral-400">Type</th>
+                  <th className="p-3 text-center text-sm font-medium text-neutral-500 dark:text-neutral-400">Severity</th>
+                  <th className="p-3 text-center text-sm font-medium text-neutral-500 dark:text-neutral-400">Status</th>
+                  <th className="p-3 text-right text-sm font-medium text-neutral-500 dark:text-neutral-400">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
                 {alerts.map((alert: any) => (
                   <tr
                     key={alert.id}
                     className={clsx(
-                      'hover:bg-gray-50 dark:hover:bg-gray-800/50 transition-colors',
-                      alert.status === 'new' && 'bg-red-50 dark:bg-red-900/20'
+                      'hover:bg-neutral-50 dark:hover:bg-neutral-800/50 transition-colors',
+                      alert.status === 'new' && 'bg-danger-50 dark:bg-danger-900/20'
                     )}
                   >
                     <td className="p-3">
@@ -322,19 +327,19 @@ export function AlertsCenter() {
                         type="checkbox"
                         checked={selectedAlerts.includes(alert.id)}
                         onChange={() => handleSelect(alert.id)}
-                        className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
+                        className="w-4 h-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
                       />
                     </td>
-                    <td className="p-3 text-sm text-gray-900 dark:text-white font-mono">
+                    <td className="p-3 text-sm text-neutral-900 dark:text-white font-mono">
                       {format(new Date(alert.created_at), 'PPpp')}
                     </td>
                     <td className="p-3">
-                      <span className="font-mono font-medium text-gray-900 dark:text-white">{alert.plate_text}</span>
+                      <span className="font-mono font-medium text-neutral-900 dark:text-white">{alert.plate_text}</span>
                       {alert.details?.blacklist_reason && (
-                        <span className="badge badge-red ml-2">{alert.details.blacklist_reason}</span>
+                        <span className="badge badge-danger ml-2">{alert.details.blacklist_reason}</span>
                       )}
                     </td>
-                    <td className="p-3 text-sm text-gray-600 dark:text-gray-300">
+                    <td className="p-3 text-sm text-neutral-600 dark:text-neutral-300">
                       {alert.camera_id || '—'}
                     </td>
                     <td className="p-3">
@@ -357,20 +362,20 @@ export function AlertsCenter() {
                       <div className="flex items-center justify-end gap-1">
                         <button
                           onClick={() => handleViewTrajectory(alert.plate_text)}
-                          className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                          className="p-2 rounded-lg text-neutral-500 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors"
                           title="View Trajectory"
                         >
-                          <Eye className="w-4 h-4 text-gray-500" />
+                          <Eye className="w-4 h-4" />
                         </button>
                         
                         {alert.status === 'new' && (
                           <button
                             onClick={() => handleAcknowledge(alert.id)}
                             disabled={acknowledgeMutation.isPending}
-                            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                            className="p-2 rounded-lg text-neutral-500 hover:text-success-600 hover:bg-success-50 dark:hover:bg-success-900/30 transition-colors"
                             title="Acknowledge"
                           >
-                            <Check className="w-4 h-4 text-green-600" />
+                            <Check className="w-4 h-4" />
                           </button>
                         )}
                         
@@ -378,15 +383,15 @@ export function AlertsCenter() {
                           <button
                             onClick={() => handleResolve(alert.id, 'Resolved via dashboard')}
                             disabled={resolveMutation.isPending}
-                            className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors"
+                            className="p-2 rounded-lg text-neutral-500 hover:text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/30 transition-colors"
                             title="Resolve"
                           >
-                            <Flag className="w-4 h-4 text-blue-600" />
+                            <Flag className="w-4 h-4" />
                           </button>
                         )}
                         
-                        <button className="p-2 rounded-lg hover:bg-gray-100 dark:hover:bg-gray-800 transition-colors">
-                          <MoreVertical className="w-4 h-4 text-gray-500" />
+                        <button className="p-2 rounded-lg text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+                          <MoreHorizontal className="w-4 h-4" />
                         </button>
                       </div>
                     </td>
@@ -399,8 +404,8 @@ export function AlertsCenter() {
       </div>
 
       {/* Pagination */}
-      <div className="flex items-center justify-between mt-4 p-4 border-t border-gray-200 dark:border-gray-700">
-        <span className="text-sm text-gray-500 dark:text-gray-400">
+      <div className="flex items-center justify-between mt-4 p-4 border-t border-neutral-200 dark:border-neutral-700">
+        <span className="text-sm text-neutral-500 dark:text-neutral-400">
           Showing {alerts.length} of {alertsData?.data?.total || 0} alerts
         </span>
         <div className="flex gap-2">

@@ -191,12 +191,12 @@ class AlertService:
 
     async def _get_camera_locations(self) -> Dict[str, tuple]:
         result = await self.db.execute(
-            select(Camera.camera_id, Camera.location)
+            select(Camera.camera_id, Camera.lat, Camera.lon)
         )
         locations = {}
-        for camera_id, location in result:
-            if location:
-                locations[camera_id] = (location.y, location.x)
+        for camera_id, lat, lon in result:
+            if lat is not None and lon is not None:
+                locations[camera_id] = (lat, lon)
         return locations
 
     async def create_alert(self, alert_data: AlertCreate) -> Alert:

@@ -15,7 +15,20 @@ import { useAuthStore } from './store/useAuthStore'
 import { ProtectedRoute } from './components/ProtectedRoute'
 
 function AppRoutes() {
-  const { isAuthenticated } = useAuthStore()
+  const { isAuthenticated, isHydrated } = useAuthStore()
+  
+  // Show loading while hydrating
+  if (!isHydrated) {
+    return (
+      <Routes>
+        <Route path="/*" element={
+          <div className="min-h-screen flex items-center justify-center bg-gray-50">
+            <div className="animate-spin rounded-full h-12 w-12 border-4 border-primary-600 border-t-transparent" />
+          </div>
+        } />
+      </Routes>
+    )
+  }
   
   return (
     <Routes>

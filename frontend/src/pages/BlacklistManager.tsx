@@ -2,8 +2,8 @@ import { useState } from 'react'
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
 import { 
   Shield, Plus, Edit, Trash2, Upload, Download, 
-  Search, Filter, X, Check, AlertTriangle, Eye,
-  FileText, MoreVertical
+  Search, Filter, X, Check, Eye, MoreHorizontal,
+  FileText, AlertTriangle
 } from 'lucide-react'
 import { blacklistApi } from '../services/apiService'
 import clsx from 'clsx'
@@ -85,7 +85,6 @@ export function BlacklistManager() {
   }
 
   const handleViewSightings = async (plate: string) => {
-    // Navigate to trajectory search with this plate
     window.location.href = `/search?plate=${encodeURIComponent(plate)}`
   }
 
@@ -107,8 +106,8 @@ export function BlacklistManager() {
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 mb-6">
         <div>
-          <h1 className="text-2xl font-bold text-gray-900 dark:text-white">Blacklist Manager</h1>
-          <p className="text-gray-500 dark:text-gray-400">
+          <h1 className="text-2xl font-bold text-neutral-900 dark:text-white">Blacklist Manager</h1>
+          <p className="text-neutral-500 dark:text-neutral-400">
             {blacklistData?.data?.total || 0} plates • {filteredData.filter((f: any) => f.is_active).length} active
           </p>
         </div>
@@ -124,65 +123,67 @@ export function BlacklistManager() {
 
       {/* Search & Filter */}
       <div className="card mb-4">
-        <div className="flex flex-wrap items-center gap-4">
-          <div className="relative flex-1 min-w-[250px]">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search plate or reason..."
-              className="input pl-10"
-            />
+        <div className="p-4">
+          <div className="flex flex-wrap items-center gap-4">
+            <div className="relative flex-1 min-w-[250px]">
+              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-neutral-400" />
+              <input
+                type="text"
+                value={searchQuery}
+                onChange={(e) => setSearchQuery(e.target.value)}
+                placeholder="Search plate or reason..."
+                className="input pl-10"
+              />
+            </div>
+            <label className="flex items-center gap-2 text-sm text-neutral-600 dark:text-neutral-400">
+              <input
+                type="checkbox"
+                checked={activeOnly}
+                onChange={(e) => setActiveOnly(e.target.checked)}
+                className="w-4 h-4 rounded border-neutral-300 text-primary-600 focus:ring-primary-500"
+              />
+              Active only
+            </label>
           </div>
-          <label className="flex items-center gap-2 text-sm text-gray-600 dark:text-gray-400">
-            <input
-              type="checkbox"
-              checked={activeOnly}
-              onChange={(e) => setActiveOnly(e.target.checked)}
-              className="w-4 h-4 rounded border-gray-300 text-primary-600 focus:ring-primary-500"
-            />
-            Active only
-          </label>
         </div>
       </div>
 
       {/* Table */}
-      <div className="flex-1 overflow-hidden bg-white dark:bg-dark-card rounded-xl border border-gray-200 dark:border-gray-700">
+      <div className="flex-1 card overflow-hidden">
         {filteredData.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-96 text-gray-500 dark:text-gray-400">
+          <div className="flex flex-col items-center justify-center h-96 text-neutral-500 dark:text-neutral-400">
             <Shield className="w-16 h-16 mb-4 opacity-50" />
             <h3 className="text-lg font-medium mb-2">No blacklisted plates</h3>
             <p>Add plates to the blacklist to enable real-time alerts</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
-            <table className="w-full">
-              <thead className="bg-gray-50 dark:bg-gray-800/50">
+            <table className="table">
+              <thead>
                 <tr>
-                  <th className="p-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Plate</th>
-                  <th className="p-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Reason</th>
-                  <th className="p-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Added By</th>
-                  <th className="p-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Date Added</th>
-                  <th className="p-3 text-left text-sm font-medium text-gray-500 dark:text-gray-400">Expires</th>
-                  <th className="p-3 text-center text-sm font-medium text-gray-500 dark:text-gray-400">Status</th>
-                  <th className="p-3 text-right text-sm font-medium text-gray-500 dark:text-gray-400">Actions</th>
+                  <th className="p-3 text-left text-sm font-medium text-neutral-500 dark:text-neutral-400">Plate</th>
+                  <th className="p-3 text-left text-sm font-medium text-neutral-500 dark:text-neutral-400">Reason</th>
+                  <th className="p-3 text-left text-sm font-medium text-neutral-500 dark:text-neutral-400">Added By</th>
+                  <th className="p-3 text-left text-sm font-medium text-neutral-500 dark:text-neutral-400">Date Added</th>
+                  <th className="p-3 text-left text-sm font-medium text-neutral-500 dark:text-neutral-400">Expires</th>
+                  <th className="p-3 text-center text-sm font-medium text-neutral-500 dark:text-neutral-400">Status</th>
+                  <th className="p-3 text-right text-sm font-medium text-neutral-500 dark:text-neutral-400">Actions</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+              <tbody className="divide-y divide-neutral-100 dark:divide-neutral-800">
                 {filteredData.map((item: any) => (
-                  <tr key={item.plate_text} className={clsx('hover:bg-gray-50 dark:hover:bg-gray-800/50', !item.is_active && 'opacity-50')}>
-                    <td className="p-3 font-mono font-medium text-gray-900 dark:text-white">{item.plate_text}</td>
-                    <td className="p-3 text-sm text-gray-700 dark:text-gray-300">{item.reason}</td>
-                    <td className="p-3 text-sm text-gray-600 dark:text-gray-400">{item.added_by}</td>
-                    <td className="p-3 text-sm text-gray-600 dark:text-gray-400">
+                  <tr key={item.plate_text} className={clsx('hover:bg-neutral-50 dark:hover:bg-neutral-800/50', !item.is_active && 'opacity-50')}>
+                    <td className="p-3 font-mono font-medium text-neutral-900 dark:text-white">{item.plate_text}</td>
+                    <td className="p-3 text-sm text-neutral-700 dark:text-neutral-300">{item.reason}</td>
+                    <td className="p-3 text-sm text-neutral-600 dark:text-neutral-400">{item.added_by}</td>
+                    <td className="p-3 text-sm text-neutral-600 dark:text-neutral-400">
                       {new Date(item.added_at).toLocaleDateString()}
                     </td>
-                    <td className="p-3 text-sm text-gray-600 dark:text-gray-400">
+                    <td className="p-3 text-sm text-neutral-600 dark:text-neutral-400">
                       {item.expires_at ? new Date(item.expires_at).toLocaleDateString() : 'Never'}
                     </td>
                     <td className="p-3 text-center">
-                      <span className={clsx('badge', item.is_active ? 'badge-red' : 'badge-gray')}>
+                      <span className={clsx('badge', item.is_active ? 'badge-danger' : 'badge-neutral')}>
                         {item.is_active ? 'Active' : 'Expired'}
                       </span>
                     </td>
@@ -202,22 +203,22 @@ export function BlacklistManager() {
                               onChange={(e) => setEditExpiry(e.target.value)}
                               className="input w-32"
                             />
-                            <button onClick={() => handleSaveEdit(item.plate_text)} className="p-2 text-green-600 hover:bg-green-50 dark:hover:bg-green-900/30 rounded" title="Save">
+                            <button onClick={() => handleSaveEdit(item.plate_text)} className="p-2 text-success-600 hover:bg-success-50 dark:hover:bg-success-900/30 rounded" title="Save">
                               <Check className="w-4 h-4" />
                             </button>
-                            <button onClick={() => setEditingId(null)} className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded" title="Cancel">
+                            <button onClick={() => setEditingId(null)} className="p-2 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded" title="Cancel">
                               <X className="w-4 h-4" />
                             </button>
                           </>
                         ) : (
                           <>
-                            <button onClick={() => handleViewSightings(item.plate_text)} className="p-2 text-blue-600 hover:bg-blue-50 dark:hover:bg-blue-900/30 rounded" title="View Sightings">
+                            <button onClick={() => handleViewSightings(item.plate_text)} className="p-2 text-primary-600 hover:bg-primary-50 dark:hover:bg-primary-900/30 rounded" title="View Sightings">
                               <Eye className="w-4 h-4" />
                             </button>
-                            <button onClick={() => handleEdit(item.plate_text, item.reason, item.expires_at)} className="p-2 text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-800 rounded" title="Edit">
+                            <button onClick={() => handleEdit(item.plate_text, item.reason, item.expires_at)} className="p-2 text-neutral-500 hover:bg-neutral-100 dark:hover:bg-neutral-800 rounded" title="Edit">
                               <Edit className="w-4 h-4" />
                             </button>
-                            <button onClick={() => { if (confirm('Remove from blacklist?')) deleteMutation.mutate(item.plate_text) }} className="p-2 text-red-600 hover:bg-red-50 dark:hover:bg-red-900/30 rounded" title="Remove">
+                            <button onClick={() => { if (confirm('Remove from blacklist?')) deleteMutation.mutate(item.plate_text) }} className="p-2 text-danger-600 hover:bg-danger-50 dark:hover:bg-danger-900/30 rounded" title="Remove">
                               <Trash2 className="w-4 h-4" />
                             </button>
                           </>
@@ -234,16 +235,18 @@ export function BlacklistManager() {
 
       {/* Add Modal */}
       {showAddModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowAddModal(false)}>
-          <div className="bg-white dark:bg-dark-card rounded-xl max-w-md w-full mx-4" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowAddModal(false)}>
+          <div className="bg-white dark:bg-neutral-900 rounded-xl max-w-md w-full mx-4 animate-scale-in" onClick={e => e.stopPropagation()}>
             <form onSubmit={handleSubmit}>
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                <h3 className="font-semibold">Add to Blacklist</h3>
-                <button type="button" onClick={() => setShowAddModal(false)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"><X className="w-5 h-5" /></button>
+              <div className="card-header flex items-center justify-between">
+                <h3 className="font-semibold text-neutral-900 dark:text-white">Add to Blacklist</h3>
+                <button type="button" onClick={() => setShowAddModal(false)} className="p-1 rounded-lg text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <div className="p-4 space-y-4">
+              <div className="card-body space-y-4">
                 <div>
-                  <label className="block text-sm font-medium mb-1">Plate Number *</label>
+                  <label className="label">Plate Number *</label>
                   <input
                     type="text"
                     value={formData.plate_text}
@@ -254,17 +257,17 @@ export function BlacklistManager() {
                   />
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Reason *</label>
-                  <select value={formData.reason} onChange={(e) => setFormData({...formData, reason: e.target.value})} className="input">
+                  <label className="label">Reason *</label>
+                  <select value={formData.reason} onChange={(e) => setFormData({...formData, reason: e.target.value})} className="select">
                     {reasons.map(r => <option key={r} value={r}>{r}</option>)}
                   </select>
                 </div>
                 <div>
-                  <label className="block text-sm font-medium mb-1">Expires At (optional)</label>
+                  <label className="label">Expires At (optional)</label>
                   <input type="datetime-local" value={formData.expires_at} onChange={(e) => setFormData({...formData, expires_at: e.target.value})} className="input" />
                 </div>
               </div>
-              <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
+              <div className="card-footer">
                 <button type="button" onClick={() => setShowAddModal(false)} className="btn-secondary">Cancel</button>
                 <button type="submit" disabled={createMutation.isPending} className="btn-primary">
                   {createMutation.isPending ? 'Adding...' : 'Add to Blacklist'}
@@ -277,15 +280,17 @@ export function BlacklistManager() {
 
       {/* Import Modal */}
       {showImportModal && (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50" onClick={() => setShowImportModal(false)}>
-          <div className="bg-white dark:bg-dark-card rounded-xl max-w-2xl w-full mx-4" onClick={e => e.stopPropagation()}>
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={() => setShowImportModal(false)}>
+          <div className="bg-white dark:bg-neutral-900 rounded-xl max-w-2xl w-full mx-4 animate-scale-in" onClick={e => e.stopPropagation()}>
             <form onSubmit={handleImport}>
-              <div className="p-4 border-b border-gray-200 dark:border-gray-700 flex items-center justify-between">
-                <h3 className="font-semibold">Bulk Import (CSV)</h3>
-                <button type="button" onClick={() => setShowImportModal(false)} className="p-1 hover:bg-gray-100 dark:hover:bg-gray-800 rounded"><X className="w-5 h-5" /></button>
+              <div className="card-header flex items-center justify-between">
+                <h3 className="font-semibold text-neutral-900 dark:text-white">Bulk Import (CSV)</h3>
+                <button type="button" onClick={() => setShowImportModal(false)} className="p-1 rounded-lg text-neutral-500 hover:text-neutral-700 hover:bg-neutral-100 dark:hover:bg-neutral-800 transition-colors">
+                  <X className="w-5 h-5" />
+                </button>
               </div>
-              <div className="p-4 space-y-4">
-                <p className="text-sm text-gray-600 dark:text-gray-400">
+              <div className="card-body space-y-4">
+                <p className="text-sm text-neutral-600 dark:text-neutral-400">
                   Paste CSV data (one plate per line): <code className="text-xs">plate,reason,expires_at</code>
                 </p>
                 <textarea
@@ -295,11 +300,11 @@ export function BlacklistManager() {
                   className="input h-48 font-mono text-sm"
                   required
                 />
-                <div className="text-xs text-gray-500 dark:text-gray-400">
+                <div className="text-xs text-neutral-500 dark:text-neutral-400">
                   Format: plate,reason,expires_at (expires_at optional, ISO format)
                 </div>
               </div>
-              <div className="p-4 border-t border-gray-200 dark:border-gray-700 flex justify-end gap-2">
+              <div className="card-footer">
                 <button type="button" onClick={() => setShowImportModal(false)} className="btn-secondary">Cancel</button>
                 <button type="submit" disabled={importMutation.isPending} className="btn-primary">
                   {importMutation.isPending ? 'Importing...' : 'Import Plates'}
