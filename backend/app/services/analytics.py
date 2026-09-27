@@ -17,6 +17,22 @@ from app.schemas.analytics import (
 )
 
 
+# h3 renamed its coordinate helpers in v4 (geo_to_h3 -> latlng_to_cell).
+# Support both so the code works with h3 3.x and 4.x.
+def _h3_cell(lat: float, lon: float, resolution: int) -> str:
+    if hasattr(h3, "latlng_to_cell"):
+        return h3.latlng_to_cell(lat, lon, resolution)
+    return h3.geo_to_h3(lat, lon, resolution)
+
+
+def _h3_center(cell: str) -> tuple:
+    if hasattr(h3, "cell_to_latlng"):
+        lat, lon = h3.cell_to_latlng(cell)
+    else:
+        lat, lon = h3.h3_to_geo(cell)
+    return lat, lon
+
+
 def haversine_distance(lat1: float, lon1: float, lat2: float, lon2: float) -> float:
     """Calculate distance in km between two lat/lon points using haversine formula"""
     R = 6371  # Earth radius in km
@@ -322,13 +338,13 @@ class AnalyticsService:
         for row in result:
             lat, lon, count = row
             if lat is not None and lon is not None:
-                h3_index = h3.geo_to_h3(lat, lon, resolution)
+                h3_index = _h3_cell(lat, lon, resolution)
                 h3_counts[h3_index] += count
         
         cells = []
         total = 0
         for h3_index, count in h3_counts.items():
-            lat, lon = h3.h3_to_geo(h3_index)
+            lat, lon = _h3_center(h3_index)
             cells.append(HeatmapCell(
                 h3_index=h3_index,
                 lat=lat,
@@ -348,6 +364,8 @@ class AnalyticsService:
         """Get average speeds per road segment"""
         start_time, end_time = self._get_time_bounds(query)
         
+        # Simplified query - fetch raw segment data, compute speeds in Python
+        # Use subquery to allow filtering by computed column alias
         sql = """
             WITH vehicle_paths AS (
                 SELECT 
@@ -375,6 +393,18 @@ class AnalyticsService:
                 WHERE vp.prev_camera IS NOT NULL
                 AND vp.prev_camera != vp.camera_id
                 AND vp.ts > vp.prev_ts
+            ),
+            time_calc AS (
+                SELECT 
+                    origin_camera,
+                    dest_camera,
+                    origin_lat,
+                    origin_lon,
+                    dest_lat,
+                    dest_lon,
+                    EXTRACT(EPOCH FROM (ts - prev_ts)) / 3600.0 as time_hours
+                FROM segment_data
+                WHERE ts > prev_ts
             )
             SELECT 
                 origin_camera,
@@ -383,8 +413,8 @@ class AnalyticsService:
                 origin_lon,
                 dest_lat,
                 dest_lon,
-                EXTRACT(EPOCH FROM (ts - prev_ts)) / 3600.0 as time_hours
-            FROM segment_data
+                time_hours
+            FROM time_calc
             WHERE time_hours > 0 AND time_hours < 2  -- Filter unrealistic times
         """
         
@@ -399,8 +429,9 @@ class AnalyticsService:
                 continue
             
             distance_km = haversine_distance(o_lat, o_lon, d_lat, d_lon)
-            if time_hours > 0:
-                speed_kmph = distance_km / time_hours
+            time_hours_f = float(time_hours)  # PostgreSQL returns Decimal
+            if time_hours_f > 0:
+                speed_kmph = distance_km / time_hours_f
                 if speed_kmph > 200:  # Filter unrealistic speeds
                     continue
                 

@@ -3,6 +3,7 @@ from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 from sqlalchemy import select
 from datetime import datetime, timedelta
+import time
 from jose import jwt, JWTError
 from passlib.context import CryptContext
 from app.db.database import get_db
@@ -25,12 +26,17 @@ def get_password_hash(password: str) -> str:
 
 
 def create_access_token(data: dict, expires_delta: timedelta = None) -> str:
+    """Create a signed JWT.
+
+    `exp` must be derived from the same clock basis python-jose uses when
+    validating (`time.time()`). Using `datetime.utcnow()` here breaks on hosts
+    whose system clock is set to local time, producing a token that is expired
+    the instant it is issued.
+    """
     to_encode = data.copy()
-    if expires_delta:
-        expire = datetime.utcnow() + expires_delta
-    else:
-        expire = datetime.utcnow() + timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
-    to_encode.update({"exp": expire})
+    if expires_delta is None:
+        expires_delta = timedelta(minutes=settings.ACCESS_TOKEN_EXPIRE_MINUTES)
+    to_encode["exp"] = int(time.time() + expires_delta.total_seconds())
     encoded_jwt = jwt.encode(to_encode, settings.SECRET_KEY, algorithm=settings.ALGORITHM)
     return encoded_jwt
 
@@ -46,10 +52,13 @@ async def get_current_user(
     )
     try:
         payload = jwt.decode(token, settings.SECRET_KEY, algorithms=[settings.ALGORITHM])
-        user_id: int = payload.get("sub")
-        if user_id is None:
+        sub = payload.get("sub")
+        if sub is None:
             raise credentials_exception
+        user_id = int(sub)
     except JWTError:
+        raise credentials_exception
+    except (TypeError, ValueError):
         raise credentials_exception
     
     result = await db.execute(select(User).where(User.id == user_id))
@@ -102,7 +111,7 @@ async def login(
         raise HTTPException(status_code=400, detail="Inactive user")
     
     access_token = create_access_token(
-        data={"sub": user.id, "email": user.email, "role": user.role}
+        data={"sub": str(user.id), "email": user.email, "role": user.role}
     )
     
     return Token(access_token=access_token)

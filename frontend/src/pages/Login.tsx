@@ -138,7 +138,7 @@ export function Login() {
                   type="email"
                   value={formData.email}
                   onChange={(e) => handleChange('email', e.target.value)}
-                  placeholder="admin@anpr.local"
+                  placeholder="admin@example.com"
                   className="input pl-10"
                   required
                   autoComplete="email"
@@ -210,7 +210,7 @@ export function Login() {
               Demo Credentials
             </p>
             <div className="text-sm text-neutral-600 dark:text-neutral-400 space-y-1 font-mono">
-              <div>Email: <strong>admin@anpr.local</strong></div>
+              <div>Email: <strong>admin@example.com</strong></div>
               <div>Password: <strong>admin123</strong></div>
             </div>
           </div>

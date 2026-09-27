@@ -5,7 +5,7 @@ import {
   Truck, Camera, AlertTriangle, Gauge, 
   ChevronDown, Download, RefreshCw, Layers,
   MapPin, Activity, TrendingUp, TrendingDown,
-  LayoutGrid
+  LayoutGrid, SlidersHorizontal
 } from 'lucide-react'
 import { 
   analyticsApi, cameraApi, alertApi 

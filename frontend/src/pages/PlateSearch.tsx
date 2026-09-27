@@ -1,12 +1,11 @@
-import { useState, useEffect, useMemo } from 'react'
+import { useDeferredValue, useEffect, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import { useDeferredValue } from 'react'
 import { MapContainer, TileLayer, Marker, Polyline, Popup, useMapEvents } from 'react-leaflet'
 import { 
   Search, Filter, Calendar, SlidersHorizontal, Play, Pause, 
   Eye, Flag, Plus, MapPin, Clock, AlertTriangle, CheckCircle,
   ChevronLeft, ChevronRight, SkipBack, SkipForward, RotateCcw,
-  X, Download, MoreHorizontal
+  X, Download, MoreHorizontal, Gauge, Navigation
 } from 'lucide-react'
 import { trajectoryApi, sightingApi } from '../services/apiService'
 import clsx from 'clsx'
@@ -201,7 +200,7 @@ const SnapshotModal = ({ isOpen, point, onClose }: any) => {
 
 export function PlateSearch() {
   const [searchQuery, setSearchQuery] = useState('')
-  const [debouncedQuery] = useDeferredValue(searchQuery)
+  const debouncedQuery = useDeferredValue(searchQuery)
   const [suggestions, setSuggestions] = useState<any[]>([])
   const [showSuggestions, setShowSuggestions] = useState(false)
   const [filters, setFilters] = useState({

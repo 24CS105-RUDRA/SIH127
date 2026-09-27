@@ -3,7 +3,7 @@ import {
   User, Bell, Shield, Database, Server, Palette, 
   Key, Globe, Moon, Sun, Save, Check, X,
   Users, Lock, CreditCard, Zap, ArrowLeft,
-  Wifi, HardDrive, Cpu, Monitor
+  Wifi, HardDrive, Cpu, Monitor, Plus, Edit, Trash2
 } from 'lucide-react'
 import { useAppStore } from '../store/useAppStore'
 import { useAuthStore } from '../store/useAuthStore'

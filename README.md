@@ -34,7 +34,7 @@ cd anpr-traffic-analytics
 
 | Service | URL | Credentials |
 |---------|-----|-------------|
-| Frontend Dashboard | http://localhost:3000 | admin@anpr.local / admin123 |
+| Frontend Dashboard | http://localhost:5173 | admin@example.com / admin123 |
 | Backend API | http://localhost:8000 | - |
 | API Docs (Swagger) | http://localhost:8000/docs | - |
 | ML Service | http://localhost:8001 | - |
@@ -176,7 +176,7 @@ The system comes pre-loaded with:
 - 12 cameras across 6 zones (Ahmedabad/Anand area)
 - 80+ demo license plates (Indian format)
 - 4 blacklisted plates for alert testing
-- 1 admin user (admin@anpr.local / admin123)
+- 1 admin user (admin@example.com / admin123)
 
 ## Development
 

@@ -177,5 +177,5 @@ ON CONFLICT (plate_text) DO NOTHING;
 
 -- Insert demo user
 INSERT INTO users (name, email, password_hash, role) VALUES
-('Admin User', 'admin@anpr.local', '$2b$12$LQv3c1yqBWVHxkd0LHAkCOYz6TtxMQJqhN8/LewdBPj/RK.PZvO.S', 'admin')
+('Admin User', 'admin@example.com', '$2b$12$u4HkWvY4rVA/Fe3tCvL6h.P5p..PyeNzmmk.tEYkL6hOPsf8ZJ/FS', 'admin')
 ON CONFLICT (email) DO NOTHING;
